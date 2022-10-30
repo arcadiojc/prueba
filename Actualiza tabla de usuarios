@@ -1,0 +1,41 @@
+-- Cambiar valores
+START TRANSACTION;
+
+SET @prefix = 'wp_';
+SET @user_login = 'demo';
+SET @user_pass = 'demo';
+SET @user_email = 'demo@demo.com';
+SET @display_name = 'Nombre Demo';
+
+-- Actualiza tabla de usuarios
+SET @field_values_user = '(`user_login`, `user_pass`, `user_email`, `display_name`, `user_registered`) VALUES (@user_login, MD5(@user_pass), @user_email, @display_name, NOW())';
+
+SET @user = CONCAT("INSERT INTO ", @prefix, "users ", @field_values_user);
+
+PREPARE tbluser FROM @user;
+EXECUTE tbluser;
+DEALLOCATE PREPARE tbluser;
+ 
+-- Actualiza tabla usermeta
+SET @id_user = LAST_INSERT_ID();
+
+SET @field_values_meta =CONCAT('(`user_id`, `meta_key`, `meta_value`) 
+VALUES (@id_user, "', @prefix, 'capabilities",''a:1:{s:13:"administrator";b:1;}'');');
+
+SET @usermeta = CONCAT("INSERT INTO ", @prefix, "usermeta ", @field_values_meta);
+
+PREPARE tblmeta FROM @usermeta;
+EXECUTE tblmeta;
+DEALLOCATE PREPARE tblmeta;
+
+-- compatibilidad
+SET @field_values_meta =CONCAT('(`user_id`, `meta_key`, `meta_value`) 
+VALUES (@id_user, "',@prefix, 'user_level", "10");');
+
+SET @usermeta = CONCAT("INSERT INTO ", @prefix, "usermeta ", @field_values_meta);
+
+PREPARE tblmeta FROM @usermeta;
+EXECUTE tblmeta;
+DEALLOCATE PREPARE tblmeta;
+
+COMMIT;
